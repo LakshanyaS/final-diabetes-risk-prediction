@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pkl
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Flutter
+DiabetesFlutterApp/build/
+DiabetesFlutterApp/.dart_tool/
+DiabetesFlutterApp/.flutter-plugins
+DiabetesFlutterApp/.flutter-plugins-dependencies
+
+# VS Code
+.vscode/
+
+# Large files
+*.png
+*.jpg
+model/artifacts/*.png

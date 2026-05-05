@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\flutter_windows_3.29.0-stable\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\AndroidSdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\Lakshanya S\\Downloads\\diabetes-final-project\\DiabetesFlutterApp\\android\\app\\.cxx\\RelWithDebInfo\\2l535r32\\armeabi-v7a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\AndroidSdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\Lakshanya S\\Downloads\\diabetes-final-project\\DiabetesFlutterApp\\android\\app\\.cxx\\RelWithDebInfo\\2l535r32\\armeabi-v7a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
