@@ -22,11 +22,11 @@ class DiabetesApp extends StatelessWidget {
   const DiabetesApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Diabetes Risk AI',
-    debugShowCheckedModeBanner: false,
-    theme: appTheme(),
-    home: const _HomeScreen(),
-  );
+        title: 'Diabetes Risk AI',
+        debugShowCheckedModeBanner: false,
+        theme: appTheme(),
+        home: const _HomeScreen(),
+      );
 }
 
 class _HomeScreen extends StatefulWidget {
@@ -54,10 +54,16 @@ class _HomeScreenState extends State<_HomeScreen> {
   ];
 
   static const _headers = [
-    (title: 'Diabetes Risk Prediction',   sub: 'Live ML inference via Flask API'),
-    (title: 'Model Explainability',        sub: 'SHAP · Feature contributions'),
-    (title: 'Dataset Visualizations',     sub: 'Glucose & BMI patterns · Pima dataset'),
-    (title: 'Model Comparison',           sub: 'Accuracy · Precision · Recall · F1 · AUC'),
+    (title: 'Diabetes Risk Prediction', sub: 'Live ML inference via Flask API'),
+    (title: 'Model Explainability', sub: 'SHAP · Feature contributions'),
+    (
+      title: 'Dataset Visualizations',
+      sub: 'Glucose & BMI patterns · Pima dataset'
+    ),
+    (
+      title: 'Model Comparison',
+      sub: 'Accuracy · Precision · Recall · F1 · AUC'
+    ),
   ];
 
   @override
@@ -71,28 +77,33 @@ class _HomeScreenState extends State<_HomeScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(children: [
             Container(
-              width: 44, height: 44,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: AppColors.accentBg,
                 borderRadius: BorderRadius.circular(13),
               ),
-              child: const Center(child: Text('🩺', style: TextStyle(fontSize: 24))),
+              child: const Center(
+                  child: Text('🩺', style: TextStyle(fontSize: 24))),
             ),
             const SizedBox(width: 12),
-            Expanded(child: Column(
+            Expanded(
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(h.title,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 15, fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary),
-                  overflow: TextOverflow.ellipsis),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary),
+                    overflow: TextOverflow.ellipsis),
                 Text(h.sub,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10, color: AppColors.textLight,
-                    fontWeight: FontWeight.w500),
-                  overflow: TextOverflow.ellipsis),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis),
               ],
             )),
             // API status indicator
@@ -104,13 +115,17 @@ class _HomeScreenState extends State<_HomeScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _idx,
         onDestinationSelected: (i) => setState(() => _idx = i),
-        destinations: _tabs.map((t) => NavigationDestination(
-          icon: Text(t.icon,
-            style: TextStyle(fontSize: 20,
-              color: AppColors.textLight.withOpacity(0.7))),
-          selectedIcon: Text(t.icon, style: const TextStyle(fontSize: 22)),
-          label: t.label,
-        )).toList(),
+        destinations: _tabs
+            .map((t) => NavigationDestination(
+                  icon: Text(t.icon,
+                      style: TextStyle(
+                          fontSize: 20,
+                          color: AppColors.textLight.withOpacity(0.7))),
+                  selectedIcon:
+                      Text(t.icon, style: const TextStyle(fontSize: 22)),
+                  label: t.label,
+                ))
+            .toList(),
       ),
     );
   }
@@ -148,7 +163,8 @@ class _ApiStatusDotState extends State<_ApiStatusDot> {
     // We import dynamically to keep main.dart clean
     final result = await Future.any([
       _doCheck(),
-      Future.delayed(const Duration(seconds: 5)).then((_) => throw TimeoutException()),
+      Future.delayed(const Duration(seconds: 5))
+          .then((_) => throw TimeoutException()),
     ]);
     return result;
   }
@@ -186,7 +202,9 @@ class _ApiStatusDotState extends State<_ApiStatusDot> {
               ? 'Flask API online'
               : 'Flask API offline',
       child: Container(
-        width: 10, height: 10, margin: const EdgeInsets.only(left: 8),
+        width: 10,
+        height: 10,
+        margin: const EdgeInsets.only(left: 8),
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );

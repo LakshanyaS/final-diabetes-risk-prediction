@@ -16,10 +16,9 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // ── Change this to match your environment ──────────────────────────────
+  //static const String baseUrl = 'http://localhost:5000';
+  // For render----------------
   static const String baseUrl = 'https://diabetes-api-wjkc.onrender.com';
-  // Android emulator  : http://10.0.2.2:5000
-  // iOS simulator     : http://127.0.0.1:5000
-  // Real device (LAN) : http://192.168.x.x:5000  (your PC's IP)
 
   static const Duration _timeout = Duration(seconds: 15);
   static final _headers = {'Content-Type': 'application/json'};
