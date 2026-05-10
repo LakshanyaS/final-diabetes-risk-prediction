@@ -1,41 +1,86 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'firebase_options.dart';
 import 'utils/theme.dart';
+import 'screens/auth_screen.dart';
 import 'screens/predict_screen.dart';
 import 'screens/visualizations_screen.dart';
 import 'screens/models_screen.dart';
 import 'screens/explainability_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  var firebaseEnabled = false;
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    firebaseEnabled = true;
+  } catch (e, _) {
+    debugPrint('Firebase unavailable — running without sign-in: $e');
+  }
+
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
     systemNavigationBarColor: Colors.white,
   ));
-  runApp(const DiabetesApp());
+  runApp(DiabetesApp(firebaseEnabled: firebaseEnabled));
 }
 
 class DiabetesApp extends StatelessWidget {
-  const DiabetesApp({super.key});
+  const DiabetesApp({super.key, required this.firebaseEnabled});
+
+  final bool firebaseEnabled;
+
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'Diabetes Risk AI',
-        debugShowCheckedModeBanner: false,
-        theme: appTheme(),
-        home: const _HomeScreen(),
-      );
+    title: 'Diabetes Risk AI',
+    debugShowCheckedModeBanner: false,
+    theme: appTheme(),
+    home: firebaseEnabled
+        ? const _AuthGate()
+        : const MainShell(showAccountMenu: false),
+  );
 }
 
-class _HomeScreen extends StatefulWidget {
-  const _HomeScreen();
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
   @override
-  State<_HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            backgroundColor: AppColors.bg,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasData) {
+          return const MainShell(showAccountMenu: true);
+        }
+        return const AuthScreen();
+      },
+    );
+  }
 }
 
-class _HomeScreenState extends State<_HomeScreen> {
+class MainShell extends StatefulWidget {
+  const MainShell({super.key, this.showAccountMenu = true});
+
+  /// False when Firebase failed to start (e.g. desktop) — hides sign-out menu.
+  final bool showAccountMenu;
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> {
   int _idx = 0;
 
   // 4 screens — added Explainability
@@ -108,6 +153,40 @@ class _HomeScreenState extends State<_HomeScreen> {
             )),
             // API status indicator
             _ApiStatusDot(),
+            if (widget.showAccountMenu)
+              PopupMenuButton<String>(
+                icon: Icon(Icons.account_circle_outlined, color: AppColors.textMuted),
+                onSelected: (value) async {
+                  if (value == 'sign_out') {
+                    await FirebaseAuth.instance.signOut();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'email',
+                    enabled: false,
+                    child: Text(
+                      FirebaseAuth.instance.currentUser?.email ?? '',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'sign_out',
+                    child: Text(
+                      'Sign out',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ]),
         ),
       ),
@@ -179,7 +258,7 @@ class _ApiStatusDotState extends State<_ApiStatusDot> {
     try {
       // Lightweight check — just try the health endpoint
       // Using the same base URL as api_service.dart
-      final client = Uri.parse('http://10.0.2.2:5000/health');
+      final _ = Uri.parse('http://10.0.2.2:5000/health');
       // We can't import http here cleanly without circular deps,
       // so we use ApiService
       return true;

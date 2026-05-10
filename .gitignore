@@ -12,11 +12,14 @@ DiabetesFlutterApp/build/
 DiabetesFlutterApp/.dart_tool/
 DiabetesFlutterApp/.flutter-plugins
 DiabetesFlutterApp/.flutter-plugins-dependencies
+DiabetesFlutterApp/android/.gradle/
+DiabetesFlutterApp/android/local.properties
+DiabetesFlutterApp/android/app/debug.keystore
+DiabetesFlutterApp/ios/Flutter/ephemeral/
+DiabetesFlutterApp/firebase-debug.log
 
 # VS Code
 .vscode/
 
-# Large files
-*.png
-*.jpg
-model/artifacts/*.png
+# Generated ML artifacts (regenerate: cd python_backend && python model/train.py --retrain)
+python_backend/model/artifacts/

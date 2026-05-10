@@ -65,7 +65,7 @@ except ImportError:
     print("[warn] imbalanced-learn not installed. Run: pip install imbalanced-learn")
 
 import config
-from model.preprocessing import make_numeric_preprocess
+from model.preprocessing import make_numeric_preprocess, numeric_steps
 
 # Columns that cannot physically be 0 in this dataset
 _ZERO_IS_MISSING = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
@@ -74,22 +74,23 @@ _ZERO_IS_MISSING = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
 def load_dataset() -> pd.DataFrame:
+    kw = {"names": config.PIMA_COLUMN_NAMES, "header": None}
     for path in [config.DATASET_PATH, config.ROOT_DATASET_FALLBACK_PATH]:
         try:
             return pd.read_csv(path)
         except FileNotFoundError:
             continue
-    return pd.read_csv(config.DATASET_URL)
+    return pd.read_csv(config.DATASET_URL, **kw)
 
 
 def fix_zero_values(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     cols = [c for c in _ZERO_IS_MISSING if c in df.columns]
     df[cols] = df[cols].replace(0, np.nan)
-    print("\n── Zero-value fix ───────────────────────────────────")
+    print("\n-- Zero-value fix -------------------------------------")
     for c in cols:
         n = df[c].isna().sum()
-        print(f"   {c:20s}: {n:3d} zeros → NaN (median will fill)")
+        print(f"   {c:20s}: {n:3d} zeros -> NaN (median will fill)")
     print()
     return df
 
@@ -150,10 +151,13 @@ def train_and_select_champion(df: pd.DataFrame):
             import inspect
             valid = inspect.signature(est_class.__init__).parameters
             filtered = {k: v for k, v in best_params.items() if k in valid}
-            new_est = est_class(**filtered)
+            kwargs_est = dict(filtered)
+            if issubclass(est_class, SVC):
+                kwargs_est.setdefault("probability", True)
+            new_est = est_class(**kwargs_est)
             from imblearn.pipeline import Pipeline as ImbPipe
             smote_pipe = ImbPipe([
-                ("pre", make_numeric_preprocess(feat)),
+                *numeric_steps(feat),
                 ("smote", SMOTE(random_state=config.RANDOM_STATE)),
                 ("clf", new_est),
             ])
@@ -184,10 +188,10 @@ def train_and_select_champion(df: pd.DataFrame):
         }
         m = results[name]["metrics"]
         print(f"   Acc={m['accuracy']:.3f}  AUC={m['roc_auc']:.3f}  "
-              f"CV={m['cv_accuracy_mean']:.3f}±{m['cv_accuracy_std']:.3f}")
+              f"CV={m['cv_accuracy_mean']:.3f}+/-{m['cv_accuracy_std']:.3f}")
 
     champion = max(results, key=lambda k: results[k]["metrics"]["accuracy"])
-    print(f"\n🏆  Champion: {champion}\n")
+    print(f"\nChampion: {champion}\n")
 
     # Permutation importance on champion
     perm = permutation_importance(
@@ -226,7 +230,7 @@ def save_scaler_stats(df: pd.DataFrame, artifacts_dir: Path) -> None:
     out = artifacts_dir / "scaler_stats.json"
     with open(out, "w") as f:
         json.dump(stats, f, indent=2)
-    print(f"   Saved scaler_stats.json  → {out}")
+    print(f"   Saved scaler_stats.json  -> {out}")
 
 
 # ─── plots ────────────────────────────────────────────────────────────────────
@@ -242,7 +246,7 @@ def save_confusion_matrix(results, champion, y_te, artifacts_dir):
     fig.tight_layout()
     p = artifacts_dir / "confusion_matrix.png"
     fig.savefig(p, dpi=150); plt.close(fig)
-    print(f"   Saved confusion_matrix.png → {p}")
+    print(f"   Saved confusion_matrix.png -> {p}")
 
 
 def save_roc_curves(results, y_te, artifacts_dir):
@@ -259,7 +263,7 @@ def save_roc_curves(results, y_te, artifacts_dir):
     fig.tight_layout()
     p = artifacts_dir / "roc_curves.png"
     fig.savefig(p, dpi=150); plt.close(fig)
-    print(f"   Saved roc_curves.png       → {p}")
+    print(f"   Saved roc_curves.png       -> {p}")
 
 
 def save_feature_importance_plot(fi, champion, artifacts_dir):
@@ -275,7 +279,7 @@ def save_feature_importance_plot(fi, champion, artifacts_dir):
     fig.tight_layout()
     p = artifacts_dir / "feature_importance.png"
     fig.savefig(p, dpi=150); plt.close(fig)
-    print(f"   Saved feature_importance.png → {p}")
+    print(f"   Saved feature_importance.png -> {p}")
 
 
 def save_cv_comparison(results, artifacts_dir):
@@ -296,7 +300,7 @@ def save_cv_comparison(results, artifacts_dir):
     fig.tight_layout()
     p = artifacts_dir / "model_comparison.png"
     fig.savefig(p, dpi=150); plt.close(fig)
-    print(f"   Saved model_comparison.png  → {p}")
+    print(f"   Saved model_comparison.png  -> {p}")
 
 
 # ─── main ─────────────────────────────────────────────────────────────────────
@@ -320,11 +324,11 @@ def train_and_save(model_path=None, artifacts_dir=None):
     }
     with open(config.METRICS_PATH, "w") as f:
         json.dump(metrics_out, f, indent=2)
-    print(f"   Saved metrics.json         → {config.METRICS_PATH}")
+    print(f"   Saved metrics.json         -> {config.METRICS_PATH}")
 
     with open(config.FEATURE_IMPORTANCE_PATH, "w") as f:
         json.dump(fi, f, indent=2)
-    print(f"   Saved feature_importance.json → {config.FEATURE_IMPORTANCE_PATH}")
+    print(f"   Saved feature_importance.json -> {config.FEATURE_IMPORTANCE_PATH}")
 
     summary = {
         "best_model": champion,
@@ -335,17 +339,17 @@ def train_and_save(model_path=None, artifacts_dir=None):
     }
     with open(config.TRAINING_SUMMARY_PATH, "w") as f:
         json.dump(summary, f, indent=2)
-    print(f"   Saved training_summary.json → {config.TRAINING_SUMMARY_PATH}")
+    print(f"   Saved training_summary.json -> {config.TRAINING_SUMMARY_PATH}")
 
     with open(model_path, "wb") as f:
         pickle.dump(champ_model, f)
-    print(f"   Saved model.pkl            → {model_path}")
+    print(f"   Saved model.pkl            -> {model_path}")
 
     # Scaler stats for Flask API
     save_scaler_stats(df, artifacts_dir)
 
     # Plots
-    print("\n── Saving plots ─────────────────────────────────────")
+    print("\n-- Saving plots -------------------------------------")
     save_confusion_matrix(results, champion, y_te, artifacts_dir)
     save_roc_curves(results, y_te, artifacts_dir)
     save_feature_importance_plot(fi, champion, artifacts_dir)
@@ -362,4 +366,4 @@ if __name__ == "__main__":
         print("Model exists. Use --retrain to overwrite.")
     else:
         out = train_and_save()
-        print(f"\nDone → {out}")
+        print(f"\nDone -> {out}")
